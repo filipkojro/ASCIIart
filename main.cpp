@@ -1,22 +1,30 @@
-#include <stdio.h>
-#include <vector>
+#include <iostream>
+#include <fstream>
 
-char grey[10] = {' ', '.', ':', '-', '=', '+', '*', '#', '%', '@'};
+char grey[10] = {'@', '%', '#', '*', '+', '=', '-', ':', '.', ' '};
 
-int main(){
 
-	FILE *fptr;
+int main(int argc, char** argv){
 
-	fptr = fopen("test.ppm", "r");
-	
-	char letter;
+	std::string filePath = "test.ppm";
+	std::ifstream in(filePath);
 
-	std::vector<char> vec;
+	std::string word;
+	int w, h;
 
-	for(int i = 0; i < 15; i++){
-		letter = fgetc(fptr);
-		vec.push_back(letter);
+	in >> word >> w >> h >> word;
+
+	int value;
+
+	system("clear");
+
+	for(int y = 0; y < h; y++){
+		for(int x = 0; x < w; x++){
+			in >> value >> value >> value;
+			std::cout << " " << grey[int(value/25.5)];
+		}
+		std::cout << "\n";
 	}
-	fclose(fptr);
+	in.close();
 	return 0;
 }
