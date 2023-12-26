@@ -2,6 +2,11 @@
 #include <fstream>
 #include <math.h>
 #include <chrono>
+#include <thread>
+#include <vector>
+#include "raylib.h"
+
+bool startFlag = false;
 
 char grey[10] = {'@', '%', '#', '*', '+', '=', '-', ':', '.', ' '};
 
@@ -14,61 +19,81 @@ double gammaExpr(int c){
 	return pow((cl+0.055)/1.055,2.4);
 }
 
-int main(int argc, char** argv){
 
-	std::string filePath = "123.ppm";
-	std::ifstream in(filePath);
+void job(int* tabIn, double* tabOut, int start, int end){
 	
+	while (!startFlag) {}
+	
+	for(int i = start; i < end; i++){
+		tabOut[i] = gammaExpr(tabIn[i*3])*0.2126+gammaExpr(tabIn[i*3 + 1])*0.7152+gammaExpr(tabIn[i*3 + 2])*0.0722;
+	}
+}
 
-	std::string word;
-	int w, h;
+int main(int argc, char** argv){
+	Image img;
+	if(argc >= 2) img = LoadImage(argv[1]);
+	else img = LoadImage("../test.png");
 
-	in >> word >> w >> h >> word;
+	Color* colors = LoadImageColors(img);
 
-	int r, g, b;
+	//std::string word;
+	//int w, h;
 
-	//system("clear");
-
-	for(int i = 0; i < 10; i++){
-
-		std::string outName = "output0.txt";
-		outName[6] = char(i + 48);
-
-		auto start = std::chrono::high_resolution_clock::now();
-
-		std::ofstream out(outName);
-
-		for(int y = 0; y < h; y++){
-			for(int x = 0; x < w; x++){
-				in >> r >> g >> b;
-
-				double gama = gammaExpr(r)*0.2126+gammaExpr(g)*0.7152+gammaExpr(b)*0.0722;
-
-				//std::cout << grey[int(gama * 10)] << " ";
-				out << grey[int(gama * 10)] << " ";
+	//in >> word >> w >> h >> word;
 
 
+	int* tabIn = new int[img.width * img.height * 3];
+	double* tabOut = new double[img.width * img.height];
 
-				//out << int(gama * 255) <<"\n"<< int(gama * 255) <<"\n"<< int(gama * 255) <<"\n";
-				//out << r << "\n" << g << "\n" << b << "\n";
+	for(int i = 0; i < img.width * img.height; i++){
+		//in >> tabIn[i*3] >> tabIn[i*3 + 1] >> tabIn[i*3 + 2];
 
-			}
-			//std::cout << "\n";
-			out << "\n";
-		}
-
-		out.close();
-
-		auto stop = std::chrono::high_resolution_clock::now();
-		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-
-		std::cout << i << " done in " << duration.count() / 1000000.0 << "\n";
+		tabIn[i*3] = colors[i].r;
+		tabIn[i*3 + 1] = colors[i].g;
+		tabIn[i*3 + 2] = colors[i].b;
 	}
 
-	//std::cout << pow(2.0, 10.0);
-	//out << pow(2.0, 10.0);
+
+
+	int numOfThreads;
+
+	if(argc == 3)numOfThreads = std::atoi(argv[2]);
+	else numOfThreads = std::thread::hardware_concurrency();
+	//
+
+	for(int test = 0; test < 10; test++){
+
+		std::vector<std::thread>jobs;
+
+		for(int i = 0; i < numOfThreads;i++){
+			int start = i * (img.width * img.height / numOfThreads);
+			int end = start + (img.width * img.height / numOfThreads);
+
+			jobs.push_back(std::thread(job, tabIn, tabOut, start, end));
+		}
+
+		auto timeStart = std::chrono::high_resolution_clock::now();
+		startFlag = true;
+
+		for(int i = 0; i < numOfThreads;i++) jobs[i].join();	
+
+		auto timeStop = std::chrono::high_resolution_clock::now();
+		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(timeStop - timeStart);
+
+		std::cout << test << " done in " << duration.count() / 1000000.0 << "\n";
+	}
 	
-	
-	in.close();
+
+	/*
+	for(int y = 0; y < img.height; y++){
+		for(int x = 0; x < img.width; x++){
+			std::cout << grey[int(tabOut[y * img.width + x] * 10)] << " ";
+		}
+		std::cout << "\n";
+	}
+	*/
+
+
+	//in.close();
 	return 0;
 }
