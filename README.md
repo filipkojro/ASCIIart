@@ -31,4 +31,8 @@ cmake --build build/
 ```
 
 ## Running 
-`./ASCIIart | full png file path | number of threads`
+* `./build/ASCIIart --file (file path)` using png photo as a input image
+* `./build/ASCIIart --core (number)` number of threads to use (default - number of threads in cpu)
+* `./build/ASCIIart --test (number)` number of tests in one run (default - 10)
+* `./build/ASCIIart --size (number) (number)` width and height of proccesed image (cannot be used with --file)
+* `./build/ASCIIart --output (file name)` name of the file to save generated ASCII art
